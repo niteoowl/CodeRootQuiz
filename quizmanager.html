@@ -3,282 +3,349 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>픽셀 퀴즈 매니저</title>
+    <title>PIXEL QUIZ SPACE</title>
+    <!-- Supabase Library -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/npm/galmuri@latest/dist/galmuri.css');
 
         :root {
-            --bg-color: #f0f0f0;
-            --card-bg: #ffffff;
-            --text-color: #000000;
+            --bg: #f0f0f0;
+            --card: #ffffff;
+            --text: #000000;
             --primary: #FB5424;
-            --border-color: #000000;
-            --shadow-color: #bcbcbc;
+            --border: #000000;
+            --shadow: #bcbcbc;
+            --item-hover: #fff0eb;
         }
 
         [data-theme="dark"] {
-            --bg-color: #1a1a1a;
-            --card-bg: #2d2d2d;
-            --text-color: #ffffff;
-            --border-color: #ffffff;
-            --shadow-color: #000000;
+            --bg: #1a1a1a;
+            --card: #2d2d2d;
+            --text: #ffffff;
+            --border: #ffffff;
+            --shadow: #000000;
+            --item-hover: #3d2a25;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Galmuri9', sans-serif; }
-        body { background-color: var(--bg-color); color: var(--text-color); min-height: 100vh; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Galmuri9', sans-serif;
+            image-rendering: pixelated;
+        }
 
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            transition: background 0.3s ease;
+        }
+
+        /* 공통 픽셀 스타일 */
         .pixel-card {
-            background: var(--card-bg);
-            border: 4px solid var(--border-color);
-            padding: 25px;
-            box-shadow: 8px 8px 0 var(--shadow-color);
+            background: var(--card);
+            border: 4px solid var(--border);
+            box-shadow: 8px 8px 0 var(--shadow);
             width: 100%;
             max-width: 600px;
+            padding: 25px;
             margin-bottom: 30px;
         }
 
-        h1, h2 { color: var(--primary); margin-bottom: 20px; text-shadow: 2px 2px 0 var(--border-color); }
-        
-        textarea {
-            width: 100%;
-            height: 150px;
-            background: #f9f9f9;
-            border: 2px solid var(--border-color);
+        h1 { color: var(--primary); text-shadow: 2px 2px 0 var(--border); margin-bottom: 20px; text-align: center; }
+        h2 { font-size: 1.2rem; margin-bottom: 15px; border-left: 6px solid var(--primary); padding-left: 10px; }
+
+        /* 테마 토글 */
+        .theme-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
             padding: 10px;
-            font-family: monospace;
-            margin-bottom: 15px;
-            resize: vertical;
+            cursor: pointer;
+            background: var(--card);
+            border: 3px solid var(--border);
+            color: var(--text);
+            box-shadow: 4px 4px 0 var(--border);
+            z-index: 100;
         }
 
-        input[type="text"] {
+        /* 폼 요소 */
+        input, textarea {
             width: 100%;
-            padding: 10px;
+            background: var(--bg);
+            border: 3px solid var(--border);
+            padding: 12px;
+            color: var(--text);
+            font-size: 1rem;
             margin-bottom: 15px;
-            border: 2px solid var(--border-color);
         }
+
+        textarea { height: 180px; font-family: monospace; font-size: 0.9rem; }
 
         .btn {
             background: var(--primary);
             color: white;
-            border: 3px solid var(--border-color);
-            padding: 10px 20px;
+            border: 3px solid var(--border);
+            padding: 12px 20px;
             cursor: pointer;
-            box-shadow: 4px 4px 0 var(--border-color);
-            font-size: 1rem;
+            box-shadow: 4px 4px 0 var(--border);
+            font-size: 1.1rem;
+            display: inline-block;
+            text-decoration: none;
+            text-align: center;
+            transition: 0.1s;
         }
 
-        .btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--border-color); }
-        .btn-sm { padding: 5px 10px; font-size: 0.8rem; }
-        .btn-secondary { background: #555; }
+        .btn:hover { filter: brightness(1.1); }
+        .btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--border); }
+        .btn-sm { padding: 5px 10px; font-size: 0.8rem; box-shadow: 2px 2px 0 var(--border); }
+        .btn-gray { background: #666; }
 
-        /* 리스트 스타일 */
+        /* 퀴즈 리스트 */
         .quiz-item {
-            border-bottom: 2px dashed var(--border-color);
+            border-bottom: 2px dashed var(--border);
             padding: 15px 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-
-        .quiz-info h3 { font-size: 1rem; }
-        .quiz-info p { font-size: 0.7rem; color: #888; }
+        .quiz-item:last-child { border: none; }
+        .quiz-item:hover { background: var(--item-hover); }
 
         /* 플레이어 UI */
-        .hp-bar { width: 100%; height: 20px; border: 3px solid var(--border-color); background: #eee; margin-bottom: 20px; }
-        .hp-fill { height: 100%; background: var(--primary); transition: width 0.3s; width: 0%; }
-        .option-btn { width: 100%; text-align: left; margin-bottom: 10px; background: var(--card-bg); color: var(--text-color); border: 2px solid var(--border-color); padding: 12px; cursor: pointer; }
+        .hp-bar { width: 100%; height: 25px; border: 4px solid var(--border); background: #333; margin-bottom: 25px; }
+        .hp-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.4s steps(10); }
+
+        .option-grid { display: grid; gap: 10px; margin-top: 20px; }
+        .option-btn {
+            background: var(--card);
+            border: 3px solid var(--border);
+            padding: 15px;
+            color: var(--text);
+            text-align: left;
+            cursor: pointer;
+            box-shadow: 4px 4px 0 var(--border);
+        }
         .option-btn:hover { background: var(--primary); color: white; }
 
-        .hidden { display: none; }
-        .theme-toggle { position: absolute; top: 20px; right: 20px; }
+        .hidden { display: none !important; }
+
+        @media (max-width: 500px) {
+            .quiz-item { flex-direction: column; align-items: flex-start; gap: 10px; }
+        }
     </style>
 </head>
 <body>
 
-    <button class="btn btn-sm theme-toggle" onclick="toggleTheme()">MODE</button>
+    <button class="theme-btn" onclick="toggleTheme()">PIXEL MODE</button>
 
-    <!-- [1] 관리자 페이지: 퀴즈 생성 -->
-    <div id="admin-page" class="hidden">
-        <h1>🛠️ 퀴즈 메이커</h1>
+    <!-- [관리자 페이지] -->
+    <div id="view-admin" class="hidden">
+        <h1>[ QUIZ SPACE ADMIN ]</h1>
         
         <div class="pixel-card">
-            <h2>새 퀴즈 만들기</h2>
-            <input type="text" id="quiz-title" placeholder="퀴즈 제목을 입력하세요">
-            <textarea id="quiz-json" placeholder='[
+            <h2>CREATE NEW QUEST</h2>
+            <input type="text" id="inp-title" placeholder="퀴즈 제목 (퀘스트명)">
+            <p style="font-size: 0.8rem; margin-bottom: 5px;">JSON DATA (q:질문, a:보기배열, cor:정답인덱스)</p>
+            <textarea id="inp-json" placeholder='[
   {
-    "q": "대한민국의 수도는?",
-    "a": ["서울", "부산", "제주", "광주"],
+    "q": "JavaScript의 창시자는?",
+    "a": ["브렌던 아이크", "마크 저커버그", "빌 게이츠", "스티브 잡스"],
     "cor": 0
   }
 ]'></textarea>
-            <button class="btn" onclick="saveQuiz()">데이터베이스에 저장</button>
+            <button class="btn" style="width: 100%;" onclick="handleSave()">데이터베이스에 저장</button>
         </div>
 
         <div class="pixel-card">
-            <h2>내 퀴즈 스페이스</h2>
-            <div id="quiz-list">불러오는 중...</div>
+            <h2>MY QUIZ SPACE</h2>
+            <div id="list-container">불러오는 중...</div>
         </div>
     </div>
 
-    <!-- [2] 플레이어 페이지: 퀴즈 진행 -->
-    <div id="player-page" class="hidden">
+    <!-- [플레이어 페이지] -->
+    <div id="view-player" class="hidden">
+        <h1>[ QUIZ ONGOING ]</h1>
         <div class="pixel-card">
             <div class="hp-bar"><div id="hp-fill" class="hp-fill"></div></div>
-            <div id="quiz-content">
-                <h2 id="display-q">질문이 로딩 중입니다...</h2>
-                <div id="display-options"></div>
+            <div id="player-main">
+                <p id="p-stage" style="color: var(--primary); font-weight: bold; margin-bottom: 10px;">STAGE 1</p>
+                <h2 id="p-question" style="border:none; padding:0; min-height: 60px;">질문을 로딩 중...</h2>
+                <div id="p-options" class="option-grid"></div>
             </div>
-            <div id="result-content" class="hidden" style="text-align: center;">
-                <h2>STAGE CLEAR!</h2>
-                <p id="final-score" style="font-size: 2rem; margin: 20px 0;"></p>
+            <div id="player-result" class="hidden" style="text-align: center;">
+                <h2 style="border:none; font-size: 2rem;">QUEST CLEAR!</h2>
+                <div id="final-score" style="font-size: 3rem; color: var(--primary); margin: 20px 0;">0 / 0</div>
                 <button class="btn" onclick="location.href=location.pathname">목록으로 돌아가기</button>
             </div>
         </div>
     </div>
 
     <script>
-        // Supabase 초기화
+        // --- 초기 설정 ---
         const SB_URL = "https://eixxtdnkqopqiawqvibl.supabase.co";
         const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpeHh0ZG5rcW9wcWlhd3F2aWJsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY3OTQ5MjYsImV4cCI6MjEwMjM3MDkyNn0.R7--WSmlJnYuz2bymCUhzzpTKVY-OHNIhyAR7e-qMYE";
-        const supabase = typeof supabase !== 'undefined' ? supabase : supabase.createClient(SB_URL, SB_KEY);
+        
+        let client; // Supabase 클라이언트
+        let currentQuiz = [];
+        let curIdx = 0;
+        let score = 0;
 
-        // 페이지 라우팅 및 초기 로드
-        window.onload = () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const quizId = urlParams.get('id');
-
-            if (quizId) {
-                loadQuizPlayer(quizId);
+        // --- 초기화 로직 ---
+        window.addEventListener('DOMContentLoaded', () => {
+            // 중복 선언 에러 방지를 위해 전역 객체 확인
+            if (window.supabase) {
+                client = window.supabase.createClient(SB_URL, SB_KEY);
+                router();
             } else {
-                showAdmin();
+                alert("라이브러리 로드 실패");
             }
-        };
+        });
 
-        // --- 관리자 로직 ---
-        async function showAdmin() {
-            document.getElementById('admin-page').classList.remove('hidden');
-            fetchQuizzes();
+        function router() {
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id');
+            if (id) {
+                initPlayer(id);
+            } else {
+                initAdmin();
+            }
         }
 
-        async function saveQuiz() {
-            const title = document.getElementById('quiz-title').value;
-            const jsonRaw = document.getElementById('quiz-json').value;
+        // --- 관리자 기능 ---
+        async function initAdmin() {
+            document.getElementById('view-admin').classList.remove('hidden');
+            loadQuizList();
+        }
+
+        async function handleSave() {
+            const title = document.getElementById('inp-title').value;
+            const jsonText = document.getElementById('inp-json').value;
+
+            if (!title || !jsonText) return alert("내용을 입력하세요.");
 
             try {
-                const quizData = JSON.parse(jsonRaw);
-                const { data, error } = await supabase.from('quizzes').insert([{ title, quiz_data: quizData }]);
-                
+                const quizData = JSON.parse(jsonText);
+                const { error } = await client.from('quizzes').insert([{ title, quiz_data: quizData }]);
                 if (error) throw error;
-                alert('퀴즈가 생성되었습니다!');
+                alert("저장 완료!");
                 location.reload();
             } catch (e) {
-                alert('JSON 형식이 잘못되었거나 오류가 발생했습니다: ' + e.message);
+                alert("JSON 형식이 올바르지 않거나 오류가 발생했습니다.\n" + e.message);
             }
         }
 
-        async function fetchQuizzes() {
-            const { data, error } = await supabase.from('quizzes').select('*').order('created_at', { ascending: false });
-            const listDiv = document.getElementById('quiz-list');
+        async function loadQuizList() {
+            const { data, error } = await client.from('quizzes').select('*').order('created_at', { ascending: false });
+            const container = document.getElementById('list-container');
             
             if (error) {
-                listDiv.innerHTML = "데이터를 불러오지 못했습니다.";
+                container.innerHTML = "데이터 로딩 에러";
                 return;
             }
 
-            listDiv.innerHTML = data.length ? '' : '생성된 퀴즈가 없습니다.';
-            data.forEach(item => {
-                const shareUrl = `${window.location.origin}${window.location.pathname}?id=${item.id}`;
-                const div = document.createElement('div');
-                div.className = 'quiz-item';
-                div.innerHTML = `
-                    <div class="quiz-info">
-                        <h3>${item.title}</h3>
-                        <p>${new Date(item.created_at).toLocaleString()}</p>
-                    </div>
+            if (data.length === 0) {
+                container.innerHTML = "생성된 퀴즈가 없습니다.";
+                return;
+            }
+
+            container.innerHTML = "";
+            data.forEach(q => {
+                const url = `${window.location.origin}${window.location.pathname}?id=${q.id}`;
+                const item = document.createElement('div');
+                item.className = 'quiz-item';
+                item.innerHTML = `
                     <div>
-                        <button class="btn btn-sm btn-secondary" onclick="copyToClipboard('${shareUrl}')">링크복사</button>
-                        <button class="btn btn-sm" onclick="location.href='${shareUrl}'">실행</button>
-                        <button class="btn btn-sm" style="background:red" onclick="deleteQuiz('${item.id}')">삭제</button>
+                        <div style="font-weight:bold;">${q.title}</div>
+                        <div style="font-size:0.7rem; color:#888;">${new Date(q.created_at).toLocaleDateString()}</div>
+                    </div>
+                    <div style="display:flex; gap:5px;">
+                        <button class="btn btn-sm btn-gray" onclick="copyLink('${url}')">링크</button>
+                        <button class="btn btn-sm" onclick="location.href='${url}'">시작</button>
+                        <button class="btn btn-sm" style="background:#b32d00" onclick="handleDelete('${q.id}')">삭제</button>
                     </div>
                 `;
-                listDiv.appendChild(div);
+                container.appendChild(item);
             });
         }
 
-        async function deleteQuiz(id) {
-            if(!confirm('정말 삭제하시겠습니까?')) return;
-            await supabase.from('quizzes').delete().eq('id', id);
-            fetchQuizzes();
+        async function handleDelete(id) {
+            if (!confirm("정말 삭제할까요?")) return;
+            await client.from('quizzes').delete().eq('id', id);
+            loadQuizList();
         }
 
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(() => alert('공유 링크가 복사되었습니다!'));
+        function copyLink(url) {
+            navigator.clipboard.writeText(url).then(() => alert("링크가 복사되었습니다!"));
         }
 
-        // --- 플레이어 로직 ---
-        let currentQuestions = [];
-        let currentIndex = 0;
-        let score = 0;
-
-        async function loadQuizPlayer(id) {
-            document.getElementById('player-page').classList.remove('hidden');
-            const { data, error } = await supabase.from('quizzes').select('*').eq('id', id).single();
+        // --- 플레이어 기능 ---
+        async function initPlayer(id) {
+            document.getElementById('view-player').classList.remove('hidden');
+            const { data, error } = await client.from('quizzes').select('*').eq('id', id).single();
 
             if (error || !data) {
-                alert('퀴즈를 찾을 수 없습니다.');
-                location.href = location.pathname;
+                alert("퀴즈를 찾을 수 없습니다.");
+                location.href = window.location.pathname;
                 return;
             }
 
-            currentQuestions = data.quiz_data;
-            showQuestion();
+            currentQuiz = data.quiz_data;
+            renderQuestion();
         }
 
-        function showQuestion() {
-            if (currentIndex >= currentQuestions.length) {
-                finishQuiz();
+        function renderQuestion() {
+            if (curIdx >= currentQuiz.length) {
+                showResult();
                 return;
             }
 
-            const q = currentQuestions[currentIndex];
-            document.getElementById('hp-fill').style.width = `${((currentIndex) / currentQuestions.length) * 100}%`;
-            document.getElementById('display-q').innerText = q.q;
-            
-            const optionsDiv = document.getElementById('display-options');
-            optionsDiv.innerHTML = '';
+            const q = currentQuiz[curIdx];
+            document.getElementById('hp-fill').style.width = `${(curIdx / currentQuiz.length) * 100}%`;
+            document.getElementById('p-stage').innerText = `STAGE ${curIdx + 1}`;
+            document.getElementById('p-question').innerText = q.q;
+
+            const optContainer = document.getElementById('p-options');
+            optContainer.innerHTML = "";
             
             q.a.forEach((opt, idx) => {
-                const btn = document.createElement('button');
-                btn.className = 'option-btn';
-                btn.innerText = `${idx + 1}. ${opt}`;
-                btn.onclick = () => checkAnswer(idx);
-                optionsDiv.appendChild(btn);
+                const b = document.createElement('button');
+                b.className = 'option-btn';
+                b.innerText = `${idx + 1}. ${opt}`;
+                b.onclick = () => checkAnswer(idx);
+                optContainer.appendChild(b);
             });
         }
 
         function checkAnswer(idx) {
-            if (idx === currentQuestions[currentIndex].cor) {
+            if (idx === currentQuiz[curIdx].cor) {
                 score++;
-                alert('정답입니다! (+1)');
+                alert("정답! EXCELLENT!");
             } else {
-                alert('틀렸습니다!');
+                alert("오답! 우우우~");
             }
-            currentIndex++;
-            showQuestion();
+            curIdx++;
+            renderQuestion();
         }
 
-        function finishQuiz() {
-            document.getElementById('hp-fill').style.width = '100%';
-            document.getElementById('quiz-content').classList.add('hidden');
-            document.getElementById('result-content').classList.remove('hidden');
-            document.getElementById('final-score').innerText = `${score} / ${currentQuestions.length}`;
+        function showResult() {
+            document.getElementById('hp-fill').style.width = "100%";
+            document.getElementById('player-main').classList.add('hidden');
+            document.getElementById('player-result').classList.remove('hidden');
+            document.getElementById('final-score').innerText = `${score} / ${currentQuiz.length}`;
         }
 
-        // 테마 전환
+        // --- 공통 ---
         function toggleTheme() {
             const html = document.documentElement;
-            html.setAttribute('data-theme', html.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
+            const current = html.getAttribute('data-theme');
+            html.setAttribute('data-theme', current === 'light' ? 'dark' : 'light');
         }
     </script>
 </body>
