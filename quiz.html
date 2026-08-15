@@ -3,237 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PIXEL QUIZ PLAYER</title>
+    <title>PIXEL QUIZ PLAYER PRO</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/npm/galmuri@latest/dist/galmuri.css');
-
-        :root {
-            --bg: #f0f0f0;
-            --card: #ffffff;
-            --text: #000000;
-            --primary: #FB5424;
-            --border: #000000;
-            --shadow: #bcbcbc;
-            --correct: #2ecc71;
-            --wrong: #e74c3c;
-        }
-
-        [data-theme="dark"] {
-            --bg: #1a1a1a;
-            --card: #2d2d2d;
-            --text: #ffffff;
-            --border: #ffffff;
-            --shadow: #000000;
-        }
-
+        :root { --bg: #f0f0f0; --card: #ffffff; --text: #000; --primary: #FB5424; --border: #000; --shadow: #bcbcbc; --correct: #2ecc71; --wrong: #e74c3c; }
+        [data-theme="dark"] { --bg: #1a1a1a; --card: #2d2d2d; --text: #fff; --border: #fff; --shadow: #000; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Galmuri9', sans-serif; }
-        body { background-color: var(--bg); color: var(--text); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; transition: 0.3s; }
-
-        .container { width: 100%; max-width: 500px; }
-
-        /* 픽셀 카드 스타일 */
-        .pixel-card {
-            background: var(--card);
-            border: 4px solid var(--border);
-            box-shadow: 8px 8px 0 var(--shadow);
-            padding: 30px;
-            position: relative;
-        }
-
-        /* 프로그레스 HP 바 */
-        .hp-container { width: 100%; height: 24px; border: 4px solid var(--border); background: #333; margin-bottom: 25px; overflow: hidden; }
-        .hp-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.4s steps(5); }
-
-        h1 { font-size: 1.5rem; text-align: center; margin-bottom: 20px; color: var(--primary); text-shadow: 2px 2px 0 var(--border); }
-        .q-text { font-size: 1.2rem; line-height: 1.6; margin-bottom: 30px; min-height: 80px; }
-
-        /* 보기 버튼 */
-        .options-list { display: grid; gap: 12px; }
-        .opt-btn {
-            background: var(--card); border: 3px solid var(--border); padding: 15px;
-            color: var(--text); cursor: pointer; text-align: left; font-size: 1rem;
-            box-shadow: 4px 4px 0 var(--border); transition: 0.1s;
-        }
-        .opt-btn:hover { background: var(--primary); color: white; transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--border); }
+        body { background: var(--bg); color: var(--text); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; transition: 0.3s; }
+        .pixel-card { background: var(--card); border: 4px solid var(--border); box-shadow: 10px 10px 0 var(--shadow); padding: 30px; width: 100%; max-width: 650px; position: relative; }
+        .hp-bar { width: 100%; height: 25px; border: 4px solid var(--border); background: #333; margin-bottom: 25px; overflow: hidden; }
+        .hp-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.4s steps(10); }
+        h1 { text-align: center; color: var(--primary); text-shadow: 2px 2px 0 var(--border); margin-bottom: 20px; }
+        .q-text { font-size: 1.15rem; line-height: 1.6; margin-bottom: 30px; border-bottom: 2px dashed var(--border); padding-bottom: 20px; }
+        .opt-btn { width: 100%; background: var(--card); border: 3px solid var(--border); padding: 18px; color: var(--text); cursor: pointer; text-align: left; margin-bottom: 12px; box-shadow: 5px 5px 0 var(--border); font-size: 1rem; transition: 0.1s; }
+        .opt-btn:hover { background: var(--primary); color: white; transform: translate(-2px, -2px); box-shadow: 7px 7px 0 var(--border); }
         .opt-btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--border); }
-
-        /* 해설 모달 */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center;
-            z-index: 100; visibility: hidden; opacity: 0; transition: 0.2s;
-        }
-        .modal-overlay.show { visibility: visible; opacity: 1; }
-        .modal-card {
-            background: var(--card); border: 4px solid var(--border); padding: 30px;
-            max-width: 400px; width: 90%; text-align: center; box-shadow: 10px 10px 0 var(--primary);
-        }
-        .feedback-title { font-size: 2rem; margin-bottom: 15px; font-weight: bold; }
-        .feedback-text { font-size: 1rem; line-height: 1.5; margin-bottom: 25px; word-break: keep-all; }
-
-        .btn-next {
-            background: var(--primary); color: white; border: 3px solid var(--border);
-            padding: 12px 30px; cursor: pointer; font-size: 1.1rem; width: 100%;
-        }
-
-        /* 결과 화면 */
-        .score-box { font-size: 4rem; color: var(--primary); margin: 20px 0; text-shadow: 3px 3px 0 var(--border); }
-
-        .theme-btn { position: fixed; top: 20px; right: 20px; padding: 10px; border: 2px solid var(--border); background: var(--card); cursor: pointer; color: var(--text); }
+        pre { background: #272822 !important; padding: 15px; overflow-x: auto; border: 2px solid var(--border); margin: 15px 0; }
+        code { font-family: monospace !important; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; justify-content: center; align-items: center; z-index: 1000; display: none; }
+        .modal-content { background: var(--card); border: 4px solid var(--border); padding: 35px; max-width: 550px; width: 90%; text-align: center; box-shadow: 15px 15px 0 var(--primary); }
         .hidden { display: none !important; }
-        .status-badge { display: inline-block; padding: 4px 10px; background: var(--border); color: var(--card); font-size: 0.8rem; margin-bottom: 10px; }
+        .score-big { font-size: 5rem; color: var(--primary); margin: 20px 0; text-shadow: 4px 4px 0 var(--border); }
     </style>
 </head>
 <body>
 
-    <button class="theme-btn" onclick="toggleTheme()">DARK/LIGHT</button>
+<div class="pixel-card" id="screen-start">
+    <div style="text-align:center; font-size: 0.8rem; margin-bottom: 10px; color: var(--primary);">[ MISSION INCOMING ]</div>
+    <h1 id="main-title">LOADING DATA...</h1>
+    <div style="height: 4px; background: var(--border); margin: 20px 0;"></div>
+    <p style="text-align:center; margin-bottom: 30px; line-height: 1.8;">모든 준비가 완료되었습니다.<br>당신의 지식을 증명하십시오.</p>
+    <button class="opt-btn" style="text-align:center; font-size: 1.3rem;" onclick="start()">START CHALLENGE</button>
+</div>
 
-    <div class="container">
-        <!-- 시작 화면 -->
-        <div id="screen-start" class="pixel-card">
-            <div class="status-badge">READY TO START</div>
-            <h1 id="start-title">퀘스트 로딩 중...</h1>
-            <p style="text-align: center; margin-bottom: 30px; line-height: 1.6;">준비가 되셨다면 아래 버튼을 눌러<br>도전을 시작하세요!</p>
-            <button class="opt-btn" style="width: 100%; text-align: center;" onclick="startQuiz()">챌린지 시작 (ENTER)</button>
-        </div>
-
-        <!-- 문제 화면 -->
-        <div id="screen-quiz" class="pixel-card hidden">
-            <div class="hp-container"><div id="hp-fill" class="hp-fill"></div></div>
-            <div id="quiz-header" style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.9rem;">
-                <span id="stage-text">STAGE 01</span>
-                <span id="progress-text">1 / 5</span>
-            </div>
-            <div class="q-text" id="q-text">질문 데이터가 없습니다.</div>
-            <div class="options-list" id="opt-list"></div>
-        </div>
-
-        <!-- 결과 화면 -->
-        <div id="screen-result" class="pixel-card hidden" style="text-align: center;">
-            <div class="status-badge">MISSION CLEAR</div>
-            <h1>최종 결과</h1>
-            <div class="score-box" id="final-score">0 / 0</div>
-            <p id="result-comment" style="margin-bottom: 30px;">수고하셨습니다!</p>
-            <button class="opt-btn" style="width: 100%; text-align: center;" onclick="location.reload()">다시 도전하기</button>
-        </div>
+<div class="pixel-card hidden" id="screen-quiz">
+    <div class="hp-bar"><div id="hp-fill" class="hp-fill"></div></div>
+    <div style="display:flex; justify-content:space-between; margin-bottom:15px; font-weight:bold;">
+        <span id="stage-label" style="color:var(--primary);">STAGE 01</span>
+        <span id="progress-label">1 / 5</span>
     </div>
+    <div id="q-text" class="q-text"></div>
+    <div id="opt-container"></div>
+</div>
 
-    <!-- 피드백 모달 -->
-    <div class="modal-overlay" id="modal">
-        <div class="modal-card">
-            <div id="feedback-icon" class="feedback-title">CORRECT!</div>
-            <div id="feedback-msg" class="feedback-text">해설이 표시되는 곳입니다.</div>
-            <button class="btn-next" onclick="nextQuestion()">다음 단계로 (NEXT)</button>
-        </div>
+<div class="modal" id="modal">
+    <div class="modal-content">
+        <h2 id="m-result" style="font-size: 2.5rem; margin-bottom: 20px;"></h2>
+        <div id="m-exp" style="text-align: left; margin-bottom: 30px; line-height: 1.6; border: 2px solid var(--border); padding: 15px; background: var(--bg);"></div>
+        <button class="opt-btn" style="background: var(--primary); color: white; text-align: center;" onclick="next()">NEXT STAGE (PRESS ENTER)</button>
     </div>
+</div>
 
-    <script>
-        const SB_URL = "https://eixxtdnkqopqiawqvibl.supabase.co";
-        const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpeHh0ZG5rcW9wcWlhd3F2aWJsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY3OTQ5MjYsImV4cCI6MjEwMjM3MDkyNn0.R7--WSmlJnYuz2bymCUhzzpTKVY-OHNIhyAR7e-qMYE";
-        let db;
+<div class="pixel-card hidden" id="screen-result" style="text-align:center;">
+    <h1 style="font-size: 2rem;">MISSION CLEAR</h1>
+    <div class="score-big" id="final-score">0 / 0</div>
+    <p id="result-msg" style="margin-bottom: 30px; font-size: 1.1rem;"></p>
+    <button class="opt-btn" style="text-align:center;" onclick="location.reload()">TRY AGAIN</button>
+</div>
 
-        let quizTitle = "";
-        let questions = [];
-        let curIdx = 0;
-        let score = 0;
+<script>
+    const SB_URL = "https://eixxtdnkqopqiawqvibl.supabase.co";
+    const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpeHh0ZG5rcW9wcWlhd3F2aWJsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY3OTQ5MjYsImV4cCI6MjEwMjM3MDkyNn0.R7--WSmlJnYuz2bymCUhzzpTKVY-OHNIhyAR7e-qMYE";
+    let db, questions = [], cur = 0, score = 0;
 
-        window.addEventListener('DOMContentLoaded', async () => {
-            db = window.supabase.createClient(SB_URL, SB_KEY);
-            
-            const params = new URLSearchParams(window.location.search);
-            const id = params.get('id');
+    window.onload = async () => {
+        db = window.supabase.createClient(SB_URL, SB_KEY);
+        const id = new URLSearchParams(window.location.search).get('id');
+        if(!id) return document.getElementById('main-title').innerText = "NO QUIZ ID FOUND";
+        
+        const { data, error } = await db.from('quizzes').select('*').eq('id', id).single();
+        if(error) return document.getElementById('main-title').innerText = "ERROR LOADING DATA";
+        
+        questions = data.quiz_data;
+        document.getElementById('main-title').innerText = data.title;
+    };
 
-            if (!id) {
-                document.getElementById('start-title').innerText = "퀴즈 ID가 없습니다.";
-                return;
-            }
+    function start() {
+        document.getElementById('screen-start').classList.add('hidden');
+        document.getElementById('screen-quiz').classList.remove('hidden');
+        render();
+    }
 
-            const { data, error } = await db.from('quizzes').select('*').eq('id', id).single();
-            if (error || !data) {
-                alert("데이터를 가져올 수 없습니다.");
-                return;
-            }
-
-            quizTitle = data.title;
-            questions = data.quiz_data;
-            document.getElementById('start-title').innerText = quizTitle;
+    function render() {
+        const q = questions[cur];
+        document.getElementById('hp-fill').style.width = ((cur / questions.length) * 100) + "%";
+        document.getElementById('stage-label').innerText = "STAGE " + String(cur + 1).padStart(2, '0');
+        document.getElementById('progress-label').innerText = (cur + 1) + " / " + questions.length;
+        
+        document.getElementById('q-text').innerHTML = marked.parse(q.q);
+        
+        const container = document.getElementById('opt-container');
+        container.innerHTML = "";
+        q.a.forEach((opt, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'opt-btn';
+            btn.innerHTML = marked.parse(opt.text);
+            btn.onclick = () => check(i);
+            container.appendChild(btn);
         });
+        Prism.highlightAll();
+    }
 
-        function startQuiz() {
-            document.getElementById('screen-start').classList.add('hidden');
-            document.getElementById('screen-quiz').classList.remove('hidden');
-            renderQuestion();
-        }
+    function check(idx) {
+        const q = questions[cur];
+        const isCor = (idx === q.cor);
+        if(isCor) score++;
 
-        function renderQuestion() {
-            const q = questions[curIdx];
-            document.getElementById('hp-fill').style.width = `${(curIdx / questions.length) * 100}%`;
-            document.getElementById('stage-text').innerText = `STAGE ${String(curIdx + 1).padStart(2, '0')}`;
-            document.getElementById('progress-text').innerText = `${curIdx + 1} / ${questions.length}`;
-            document.getElementById('q-text').innerText = q.q;
+        const modal = document.getElementById('modal');
+        const mResult = document.getElementById('m-result');
+        mResult.innerText = isCor ? "CORRECT!" : "WRONG!";
+        mResult.style.color = isCor ? "var(--correct)" : "var(--wrong)";
+        
+        document.getElementById('m-exp').innerHTML = marked.parse(q.a[idx].exp || (isCor ? "정답입니다!" : "아쉽게도 틀렸습니다."));
+        modal.style.display = "flex";
+        Prism.highlightAll();
+    }
 
-            const list = document.getElementById('opt-list');
-            list.innerHTML = "";
+    function next() {
+        document.getElementById('modal').style.display = "none";
+        cur++;
+        if(cur < questions.length) render();
+        else showFinal();
+    }
 
-            q.a.forEach((opt, idx) => {
-                const btn = document.createElement('button');
-                btn.className = "opt-btn";
-                btn.innerText = opt.text;
-                btn.onclick = () => checkAnswer(idx);
-                list.appendChild(btn);
-            });
-        }
-
-        function checkAnswer(choiceIdx) {
-            const q = questions[curIdx];
-            const isCorrect = (choiceIdx === q.cor);
-            const chosenOpt = q.a[choiceIdx];
-
-            if (isCorrect) score++;
-
-            // 모달 설정
-            const modal = document.getElementById('modal');
-            const icon = document.getElementById('feedback-icon');
-            const msg = document.getElementById('feedback-msg');
-
-            icon.innerText = isCorrect ? "CORRECT!" : "WRONG!";
-            icon.style.color = isCorrect ? "var(--correct)" : "var(--wrong)";
-            
-            // 핵심: 선택한 번호에 달린 개별 해설 표시 (만약 해설이 비어있으면 기본 문구)
-            msg.innerText = chosenOpt.exp || (isCorrect ? "정답입니다!" : "아쉽네요, 틀렸습니다.");
-
-            modal.classList.add('show');
-        }
-
-        function nextQuestion() {
-            document.getElementById('modal').classList.remove('show');
-            curIdx++;
-
-            if (curIdx < questions.length) {
-                renderQuestion();
-            } else {
-                showResult();
-            }
-        }
-
-        function showResult() {
-            document.getElementById('screen-quiz').classList.add('hidden');
-            document.getElementById('screen-result').classList.remove('hidden');
-            document.getElementById('final-score').innerText = `${score} / ${questions.length}`;
-            
-            const ratio = score / questions.length;
-            let comment = "더 노력해보세요!";
-            if(ratio === 1) comment = "완벽합니다! 퀴즈 마스터!";
-            else if(ratio >= 0.7) comment = "대단한 실력이네요!";
-            
-            document.getElementById('result-comment').innerText = comment;
-        }
-
-        function toggleTheme() {
-            const html = document.documentElement;
-            html.setAttribute('data-theme', html.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
-        }
-    </script>
+    function showFinal() {
+        document.getElementById('screen-quiz').classList.add('hidden');
+        document.getElementById('screen-result').classList.remove('hidden');
+        document.getElementById('final-score').innerText = score + " / " + questions.length;
+        
+        const ratio = score / questions.length;
+        let msg = "더 공부하고 오세요!";
+        if(ratio === 1) msg = "당신은 완벽한 마스터입니다!";
+        else if(ratio >= 0.7) msg = "훌륭한 성적입니다!";
+        document.getElementById('result-msg').innerText = msg;
+    }
+</script>
 </body>
 </html>
