@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QUIZ MANAGER PRO</title>
+    <title>QUIZ MASTER - ADVANCED EDITOR</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/npm/galmuri@latest/dist/galmuri.css');
 
         :root {
-            --bg: #f4f4f7;
+            --bg: #f8f9fa;
             --card: #ffffff;
             --text: #1a1a1b;
             --primary: #FB5424;
             --border: #000000;
             --shadow: #bcbcbc;
-            --secondary: #4a5568;
+            --accent: #fff5f2;
         }
 
         [data-theme="dark"] {
@@ -24,114 +24,93 @@
             --text: #e2e8f0;
             --border: #ffffff;
             --shadow: #000000;
-            --secondary: #a0aec0;
+            --accent: #2d201d;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Galmuri9', sans-serif; }
-        body { background-color: var(--bg); color: var(--text); padding: 40px 20px; display: flex; flex-direction: column; align-items: center; }
+        body { background-color: var(--bg); color: var(--text); padding: 20px; transition: 0.3s; }
 
-        .container { width: 100%; max-width: 1000px; }
-        h1 { color: var(--primary); font-size: 2.5rem; text-align: center; margin-bottom: 40px; text-shadow: 3px 3px 0 var(--border); }
-
-        .layout-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 30px; }
-
-        /* 좌측: 리스트 / 우측: 에디터 */
-        .panel { background: var(--card); border: 4px solid var(--border); box-shadow: 8px 8px 0 var(--shadow); padding: 25px; height: fit-content; }
-        .sticky-panel { position: sticky; top: 20px; }
-
-        h2 { font-size: 1.2rem; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-
-        /* 버튼 스타일 */
-        .btn {
-            background: var(--primary); color: white; border: 3px solid var(--border);
-            padding: 8px 16px; cursor: pointer; box-shadow: 4px 4px 0 var(--border);
-            font-size: 0.9rem; transition: 0.1s; text-align: center;
-        }
-        .btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--border); }
-        .btn-gray { background: var(--secondary); }
-        .btn-blue { background: #3182ce; }
-        .btn-red { background: #e53e3e; }
-        .btn-full { width: 100%; padding: 15px; font-size: 1.1rem; margin-top: 20px; }
-
-        /* 리스트 아이템 */
-        .quiz-item {
-            padding: 15px; border: 2px solid var(--border); margin-bottom: 15px;
-            display: flex; justify-content: space-between; align-items: center;
-            background: var(--bg); transition: 0.2s;
-        }
-        .quiz-item:hover { transform: translateX(5px); }
-
-        /* 에디터 폼 */
-        .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 0.9rem; }
-        input, textarea, select {
-            width: 100%; padding: 12px; border: 2px solid var(--border);
-            background: var(--bg); color: var(--text); font-size: 0.9rem;
-        }
-
-        .question-card {
-            border: 2px solid var(--border); padding: 20px; margin-bottom: 20px;
-            background: rgba(0,0,0,0.03); position: relative;
-        }
-        .q-header { display: flex; justify-content: space-between; margin-bottom: 15px; color: var(--primary); }
+        .container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 350px 1fr; gap: 30px; }
         
-        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-        .option-item { display: flex; align-items: center; gap: 5px; }
-        .option-item input[type="radio"] { width: auto; }
+        header { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 4px solid var(--border); padding-bottom: 10px; }
+        h1 { color: var(--primary); text-shadow: 2px 2px 0 var(--border); }
 
-        .json-editor { height: 400px; font-family: monospace; line-height: 1.5; }
+        .panel { background: var(--card); border: 4px solid var(--border); box-shadow: 8px 8px 0 var(--shadow); padding: 20px; height: calc(100vh - 150px); overflow-y: auto; }
+        
+        /* 퀴즈 리스트 */
+        .quiz-item { padding: 15px; border: 2px solid var(--border); margin-bottom: 15px; background: var(--bg); position: relative; }
+        .quiz-item:hover { transform: translate(-2px, -2px); box-shadow: 4px 4px 0 var(--border); }
+        .quiz-item h3 { font-size: 1rem; margin-bottom: 10px; }
 
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
-        .tab { padding: 10px 20px; border: 2px solid var(--border); cursor: pointer; background: #ddd; color: #666; }
-        .tab.active { background: var(--primary); color: white; border-bottom: none; }
+        /* 에디터 스타일 */
+        .editor-header { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px dashed var(--border); padding-bottom: 15px; }
+        .q-card { border: 3px solid var(--border); padding: 20px; margin-bottom: 30px; background: var(--accent); }
+        .q-title-row { display: flex; gap: 10px; margin-bottom: 15px; }
+        
+        .option-box { background: var(--card); border: 2px solid var(--border); padding: 15px; margin-bottom: 10px; display: grid; grid-template-columns: 40px 1fr; gap: 10px; }
+        .opt-radio { width: 24px; height: 24px; cursor: pointer; accent-color: var(--primary); margin-top: 10px; }
+        
+        .input-group { display: flex; flex-direction: column; gap: 5px; }
+        label { font-size: 0.75rem; color: var(--primary); font-weight: bold; }
+        input, textarea { padding: 10px; border: 2px solid var(--border); background: var(--bg); color: var(--text); font-size: 0.9rem; }
+        textarea { height: 50px; resize: none; }
 
-        .hidden { display: none; }
-        .theme-btn { position: fixed; top: 20px; right: 20px; z-index: 100; }
+        .btn { background: var(--primary); color: white; border: 3px solid var(--border); padding: 8px 15px; cursor: pointer; box-shadow: 3px 3px 0 var(--border); font-size: 0.9rem; }
+        .btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--border); }
+        .btn-red { background: #e53e3e; }
+        .btn-blue { background: #3182ce; }
+        .btn-full { width: 100%; padding: 15px; font-size: 1.1rem; margin-top: 10px; }
+
+        .tab-btn { padding: 5px 15px; border: 2px solid var(--border); cursor: pointer; background: #ddd; color: #555; }
+        .tab-btn.active { background: var(--primary); color: white; }
+
+        .hidden { display: none !important; }
+        .theme-toggle { cursor: pointer; font-size: 0.8rem; }
     </style>
 </head>
 <body>
 
-    <button class="btn theme-btn" onclick="toggleTheme()">THEME CHANGE</button>
+    <header>
+        <h1>PIXEL QUIZ MASTER <span style="font-size: 0.8rem; vertical-align: middle;">v2.0 (개별해설판)</span></h1>
+        <div style="display: flex; gap: 15px; align-items: center;">
+            <span class="theme-toggle" onclick="toggleTheme()">[ THEME SWITCH ]</span>
+        </div>
+    </header>
 
     <div class="container">
-        <h1>[ QUIZ MANAGER PRO ]</h1>
+        <!-- 좌측: 리스트 -->
+        <div class="panel">
+            <h2 style="margin-bottom: 15px; font-size: 1.1rem;">MY QUESTS <button class="btn btn-blue" style="float: right; padding: 2px 8px;" onclick="resetEditor()">NEW</button></h2>
+            <div id="quiz-list">데이터를 로드하는 중...</div>
+        </div>
 
-        <div class="layout-grid">
-            <!-- 좌측: 내 퀴즈 목록 -->
-            <div class="panel">
-                <h2>MY QUESTS <button class="btn btn-sm btn-blue" onclick="resetEditor()">NEW</button></h2>
-                <div id="quiz-list-empty" class="hidden" style="text-align:center; padding:20px; color:#888;">데이터가 없습니다.</div>
-                <div id="quiz-list"></div>
+        <!-- 우측: 에디터 -->
+        <div class="panel">
+            <div class="editor-header">
+                <div class="tab-btn active" id="tab-form" onclick="switchTab('form')">VISUAL EDITOR</div>
+                <div class="tab-btn" id="tab-json" onclick="switchTab('json')">JSON VIEW</div>
             </div>
 
-            <!-- 우측: 에디터 -->
-            <div class="panel sticky-panel">
-                <div class="tabs">
-                    <div id="tab-form" class="tab active" onclick="switchTab('form')">VISUAL EDITOR</div>
-                    <div id="tab-json" class="tab" onclick="switchTab('json')">RAW JSON</div>
+            <div id="editor-form">
+                <div class="input-group" style="margin-bottom: 25px;">
+                    <label>QUEST TITLE (퀴즈 팩 제목)</label>
+                    <input type="text" id="edit-title" placeholder="예: 상식 퀴즈 01" style="font-size: 1.2rem;">
                 </div>
 
-                <div id="editor-form">
-                    <div class="form-group">
-                        <label>QUEST TITLE</label>
-                        <input type="text" id="edit-title" placeholder="시나리오 제목을 입력하세요">
-                    </div>
-
-                    <div id="questions-container">
-                        <!-- 문제들이 여기에 동적으로 추가됨 -->
-                    </div>
-
-                    <button class="btn btn-gray" style="width:100%" onclick="addQuestionField()">+ ADD QUESTION</button>
+                <div id="q-container">
+                    <!-- 문제들이 동적으로 추가됨 -->
                 </div>
 
-                <div id="editor-json" class="hidden">
-                    <textarea id="json-area" class="json-editor" oninput="syncJSONToForm()"></textarea>
-                    <p style="font-size:0.7rem; margin-top:5px; color:var(--primary)">* 직접 JSON 수정 시 형식을 엄격히 지켜주세요.</p>
-                </div>
-
-                <button class="btn btn-full" id="save-btn" onclick="handleSave()">SAVE TO DATABASE</button>
-                <input type="hidden" id="edit-id" value="">
+                <button class="btn btn-blue" style="width: 100%; margin-bottom: 20px;" onclick="addQuestionField()">+ ADD NEW QUESTION</button>
             </div>
+
+            <div id="editor-json" class="hidden">
+                <textarea id="json-area" style="width: 100%; height: 500px; font-family: monospace;" readonly></textarea>
+                <p style="font-size: 0.7rem; color: #888; margin-top: 10px;">* JSON 뷰는 저장 시 자동 업데이트됩니다.</p>
+            </div>
+
+            <button class="btn btn-full" onclick="handleSave()">SAVE ALL DATA TO CLOUD</button>
+            <input type="hidden" id="edit-id" value="">
         </div>
     </div>
 
@@ -140,157 +119,144 @@
         const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpeHh0ZG5rcW9wcWlhd3F2aWJsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY3OTQ5MjYsImV4cCI6MjEwMjM3MDkyNn0.R7--WSmlJnYuz2bymCUhzzpTKVY-OHNIhyAR7e-qMYE";
         let db;
 
-        // 초기화
         window.addEventListener('DOMContentLoaded', () => {
             db = window.supabase.createClient(SB_URL, SB_KEY);
-            loadQuizList();
-            addQuestionField(); // 기본 1번 문제 생성
+            loadList();
+            addQuestionField(); 
         });
 
-        // 퀴즈 목록 불러오기
-        async function loadQuizList() {
-            const { data, error } = await db.from('quizzes').select('*').order('created_at', { ascending: false });
+        async function loadList() {
+            const { data } = await db.from('quizzes').select('*').order('created_at', { ascending: false });
             const list = document.getElementById('quiz-list');
-            if(data.length === 0) document.getElementById('quiz-list-empty').classList.remove('hidden');
-            else document.getElementById('quiz-list-empty').classList.add('hidden');
-
-            list.innerHTML = "";
-            data.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'quiz-item';
-                div.innerHTML = `
-                    <div>
-                        <div style="font-weight:bold">${item.title}</div>
-                        <div style="font-size:0.7rem; color:var(--secondary)">${item.quiz_data.length} Questions</div>
-                    </div>
-                    <div style="display:flex; gap:5px;">
-                        <button class="btn btn-sm btn-blue" onclick="loadToEditor('${item.id}')">EDIT</button>
-                        <button class="btn btn-sm btn-red" onclick="handleDelete('${item.id}')">DEL</button>
+            list.innerHTML = data.length ? "" : "데이터가 없습니다.";
+            data.forEach(q => {
+                const item = document.createElement('div');
+                item.className = 'quiz-item';
+                item.innerHTML = `
+                    <h3>${q.title}</h3>
+                    <p style="font-size:0.7rem; color:#888;">Questions: ${q.quiz_data.length}</p>
+                    <div style="margin-top:10px; display:flex; gap:5px;">
+                        <button class="btn btn-blue" style="flex:1" onclick="loadToEditor('${q.id}')">EDIT</button>
+                        <button class="btn btn-red" onclick="handleDelete('${q.id}')">DEL</button>
                     </div>
                 `;
-                list.appendChild(div);
+                list.appendChild(item);
             });
         }
 
-        // 에디터에 로드
-        async function loadToEditor(id) {
-            const { data, error } = await db.from('quizzes').select('*').eq('id', id).single();
-            if(error) return alert("로딩 실패");
-
-            document.getElementById('edit-id').value = data.id;
-            document.getElementById('edit-title').value = data.title;
-            document.getElementById('questions-container').innerHTML = "";
-            
-            data.quiz_data.forEach((q, idx) => {
-                addQuestionField(q);
-            });
-            syncFormToJSON();
-            document.getElementById('save-btn').innerText = "UPDATE CHANGES";
-        }
-
-        // 문제 필드 추가
         function addQuestionField(data = null) {
-            const container = document.getElementById('questions-container');
+            const container = document.getElementById('q-container');
             const qIdx = container.children.length;
-            const qDiv = document.createElement('div');
-            qDiv.className = 'question-card';
-            qDiv.innerHTML = `
-                <div class="q-header">
-                    <span># QUESTION ${qIdx + 1}</span>
-                    <button class="btn btn-red btn-sm" onclick="this.parentElement.parentElement.remove(); syncFormToJSON();">X</button>
-                </div>
-                <input type="text" placeholder="질문 내용을 입력하세요" class="q-text" value="${data ? data.q : ''}" oninput="syncFormToJSON()">
-                <div class="options-grid">
-                    ${[0,1,2,3].map(i => `
-                        <div class="option-item">
-                            <input type="radio" name="cor_${qIdx}" value="${i}" ${data && data.cor == i ? 'checked' : (i==0?'checked':'')} onchange="syncFormToJSON()">
-                            <input type="text" class="q-opt" placeholder="보기 ${i+1}" value="${data ? data.a[i] : ''}" oninput="syncFormToJSON()">
+            const card = document.createElement('div');
+            card.className = 'q-card';
+            
+            // 보기 데이터 초기화 (신규 생성 시 4개 기본)
+            const optionsData = data ? data.a : [
+                {text: "", exp: ""}, {text: "", exp: ""}, {text: "", exp: ""}, {text: "", exp: ""}
+            ];
+
+            let optionsHtml = '';
+            optionsData.forEach((opt, oIdx) => {
+                optionsHtml += `
+                    <div class="option-box">
+                        <input type="radio" name="cor_${qIdx}" class="opt-radio" value="${oIdx}" ${data && data.cor == oIdx ? 'checked' : (oIdx==0?'checked':'')}>
+                        <div class="input-group">
+                            <input type="text" class="opt-text" placeholder="보기 ${oIdx+1} 내용" value="${opt.text}">
+                            <textarea class="opt-exp" placeholder="이 보기를 선택했을 때 보여줄 개별 해설">${opt.exp || ''}</textarea>
                         </div>
-                    `).join('')}
-                </div>
-                <label style="font-size:0.7rem; margin-top:10px;">EXPLANATION (해설)</label>
-                <textarea class="q-exp" placeholder="오답일 때 보여줄 상세 설명을 작성하세요" style="height:60px;" oninput="syncFormToJSON()">${data && data.exp ? data.exp : ''}</textarea>
-            `;
-            container.appendChild(qDiv);
-            syncFormToJSON();
-        }
-
-        // 폼 데이터를 JSON으로 동기화
-        function syncFormToJSON() {
-            const title = document.getElementById('edit-title').value;
-            const qCards = document.querySelectorAll('.question-card');
-            const quiz_data = [];
-
-            qCards.forEach((card, idx) => {
-                const qText = card.querySelector('.q-text').value;
-                const opts = Array.from(card.querySelectorAll('.q-opt')).map(i => i.value);
-                const cor = card.querySelector(`input[name="cor_${idx}"]:checked`)?.value || 0;
-                const exp = card.querySelector('.q-exp').value;
-                quiz_data.push({ q: qText, a: opts, cor: parseInt(cor), exp: exp });
+                    </div>
+                `;
             });
 
-            document.getElementById('json-area').value = JSON.stringify(quiz_data, null, 2);
+            card.innerHTML = `
+                <div class="q-title-row">
+                    <span style="color:var(--primary); font-weight:bold;"># Q${qIdx + 1}</span>
+                    <input type="text" class="q-val" placeholder="질문 내용을 입력하세요" style="flex:1" value="${data ? data.q : ''}">
+                    <button class="btn btn-red" onclick="this.parentElement.parentElement.remove()">X</button>
+                </div>
+                <div class="options-container">${optionsHtml}</div>
+            `;
+            container.appendChild(card);
         }
 
-        // JSON을 폼으로 동기화 (역방향)
-        function syncJSONToForm() {
-            try {
-                const quiz_data = JSON.parse(document.getElementById('json-area').value);
-                const container = document.getElementById('questions-container');
-                container.innerHTML = "";
-                quiz_data.forEach(q => addQuestionField(q));
-            } catch(e) { /* 무시: 타이핑 중 에러 방지 */ }
+        function getFormData() {
+            const cards = document.querySelectorAll('.q-card');
+            const quizData = [];
+            cards.forEach((card, qIdx) => {
+                const qText = card.querySelector('.q-val').value;
+                const cor = card.querySelector(`input[name="cor_${qIdx}"]:checked`).value;
+                const optionBoxes = card.querySelectorAll('.option-box');
+                const options = [];
+                optionBoxes.forEach(box => {
+                    options.push({
+                        text: box.querySelector('.opt-text').value,
+                        exp: box.querySelector('.opt-exp').value
+                    });
+                });
+                quizData.push({ q: qText, cor: parseInt(cor), a: options });
+            });
+            return quizData;
         }
 
-        // 저장 로직
         async function handleSave() {
             const id = document.getElementById('edit-id').value;
             const title = document.getElementById('edit-title').value;
-            const quiz_data = JSON.parse(document.getElementById('json-area').value);
+            const quiz_data = getFormData();
 
-            if(!title) return alert("제목을 입력하세요.");
+            if(!title) return alert("제목을 입력하세요!");
 
             const payload = { title, quiz_data };
             let error;
-
             if(id) {
-                // 수정
                 const res = await db.from('quizzes').update(payload).eq('id', id);
                 error = res.error;
             } else {
-                // 신규 생성
                 const res = await db.from('quizzes').insert([payload]);
                 error = res.error;
             }
 
-            if(error) alert("저장 실패: " + error.message);
+            if(error) alert("오류 발생: " + error.message);
             else {
                 alert("성공적으로 저장되었습니다!");
                 resetEditor();
-                loadQuizList();
+                loadList();
             }
         }
 
+        async function loadToEditor(id) {
+            const { data } = await db.from('quizzes').select('*').eq('id', id).single();
+            document.getElementById('edit-id').value = data.id;
+            document.getElementById('edit-title').value = data.title;
+            const container = document.getElementById('q-container');
+            container.innerHTML = "";
+            data.quiz_data.forEach(q => addQuestionField(q));
+            document.getElementById('json-area').value = JSON.stringify(data.quiz_data, null, 2);
+        }
+
         async function handleDelete(id) {
-            if(!confirm("영구 삭제됩니다. 계속하시겠습니까?")) return;
+            if(!confirm("진짜 삭제할까요?")) return;
             await db.from('quizzes').delete().eq('id', id);
-            loadQuizList();
+            loadList();
         }
 
         function resetEditor() {
             document.getElementById('edit-id').value = "";
             document.getElementById('edit-title').value = "";
-            document.getElementById('questions-container').innerHTML = "";
-            document.getElementById('save-btn').innerText = "SAVE TO DATABASE";
+            document.getElementById('q-container').innerHTML = "";
             addQuestionField();
         }
 
         function switchTab(type) {
-            document.getElementById('tab-form').classList.toggle('active', type === 'form');
-            document.getElementById('tab-json').classList.toggle('active', type === 'json');
-            document.getElementById('editor-form').classList.toggle('hidden', type !== 'form');
-            document.getElementById('editor-json').classList.toggle('hidden', type !== 'json');
-            if(type === 'json') syncFormToJSON();
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + type).classList.add('active');
+            if(type === 'json') {
+                document.getElementById('editor-form').classList.add('hidden');
+                document.getElementById('editor-json').classList.remove('hidden');
+                document.getElementById('json-area').value = JSON.stringify(getFormData(), null, 2);
+            } else {
+                document.getElementById('editor-form').classList.remove('hidden');
+                document.getElementById('editor-json').classList.add('hidden');
+            }
         }
 
         function toggleTheme() {
