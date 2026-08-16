@@ -3,214 +3,137 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CODE QUIZ PLAYER - READABILITY PRO</title>
+    <title>CODE QUIZ PLAYER - SECURITY & READABILITY</title>
     
-    <!-- 라이브러리 로드 -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
-    <!-- PrismJS: Okaidia 테마 (가독성 최고) -->
+    <!-- PrismJS: Okaidia 테마 (코드가 가장 잘 보임) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-    <!-- 언어별 하이라이팅 추가 (JS, Python, Java 등) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup.min.js"></script> <!-- HTML/XML 지원 -->
 
     <style>
         @import url('https://cdn.jsdelivr.net/npm/galmuri@latest/dist/galmuri.css');
 
         :root {
-            --bg: #ececf1;
-            --card: #ffffff;
-            --text: #111111;
-            --primary: #FB5424;
-            --border: #000000;
-            --code-bg: #272822; /* Prism Okaidia 배경색 */
+            --bg: #ececf1; --card: #ffffff; --text: #111111;
+            --primary: #FB5424; --border: #000000;
         }
 
         [data-theme="dark"] {
-            --bg: #0d1117;
-            --card: #161b22;
-            --text: #c9d1d9;
-            --border: #30363d;
+            --bg: #0d1117; --card: #161b22; --text: #c9d1d9; --border: #30363d;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Galmuri9', sans-serif; }
-
-        body {
-            background: var(--bg);
-            color: var(--text);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
-            line-height: 1.6;
-        }
+        body { background: var(--bg); color: var(--text); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; line-height: 1.6; }
 
         .pixel-card {
             background: var(--card);
             border: 4px solid var(--border);
             box-shadow: 12px 12px 0 rgba(0,0,0,0.15);
             width: 100%;
-            max-width: 800px; /* 가독성을 위해 폭을 조금 더 넓힘 */
+            max-width: 800px;
             padding: 40px;
             position: relative;
         }
 
-        /* HP 바 & 프로그레스 */
         .hp-bar { width: 100%; height: 28px; border: 4px solid var(--border); background: #333; margin-bottom: 25px; }
-        .hp-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+        .hp-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.5s ease; }
 
-        h1 { font-size: 2rem; text-align: center; color: var(--primary); text-shadow: 2px 2px 0 var(--border); margin-bottom: 30px; }
-
-        /* --- 마크다운 가독성 핵심 설정 --- */
+        /* --- 가독성 및 코드 블록 설정 --- */
         .q-text {
-            font-size: 1.2rem;
-            margin-bottom: 40px;
-            padding: 20px;
-            background: rgba(0,0,0,0.02);
-            border-left: 8px solid var(--primary);
-            word-break: break-word;
+            font-size: 1.2rem; margin-bottom: 40px; padding: 25px;
+            background: rgba(0,0,0,0.03); border-left: 8px solid var(--primary);
         }
 
-        /* 코드 블록 (Block) */
+        /* 코드 블록은 무조건 독립된 영역으로 */
         pre {
             display: block !important;
-            background: var(--code-bg) !important;
+            background: #272822 !important;
             padding: 20px !important;
             margin: 20px 0 !important;
-            border-radius: 8px;
-            overflow-x: auto;
             border: 2px solid var(--border);
-            box-shadow: inset 4px 4px 0 rgba(0,0,0,0.2);
+            overflow-x: auto;
+            border-radius: 5px;
         }
 
-        code {
-            font-family: 'Consolas', 'Monaco', 'Courier New', monospace !important;
-            font-size: 0.95rem !important;
-            line-height: 1.4 !important;
-        }
+        code { font-family: 'Consolas', 'Monaco', monospace !important; font-size: 0.95rem !important; }
 
-        /* 인라인 코드 (Inline) */
+        /* 인라인 코드 강조 */
         :not(pre) > code {
-            background: var(--primary);
-            color: white !important;
+            background: var(--primary) !important;
+            color: #fff !important;
             padding: 2px 6px !important;
-            border-radius: 4px;
-            font-weight: bold;
+            border-radius: 3px;
         }
 
-        /* 줄바꿈 보존 */
-        p { margin-bottom: 15px; white-space: pre-wrap; }
+        p { margin-bottom: 15px; }
 
-        /* --- 선지(Option) 버튼 --- */
         .opt-list { display: grid; gap: 15px; }
         .opt-btn {
-            background: var(--card);
-            border: 3px solid var(--border);
-            padding: 20px;
-            color: var(--text);
-            cursor: pointer;
-            text-align: left;
-            font-size: 1.1rem;
-            box-shadow: 6px 6px 0 var(--border);
-            transition: all 0.1s;
-            display: block; /* 버튼 내부 마크다운도 block으로 인식 */
+            background: var(--card); border: 3px solid var(--border); padding: 20px;
+            color: var(--text); cursor: pointer; text-align: left; font-size: 1.1rem;
+            box-shadow: 6px 6px 0 var(--border); transition: 0.1s;
         }
-
-        .opt-btn:hover {
-            background: var(--primary);
-            color: white;
-            transform: translate(-3px, -3px);
-            box-shadow: 9px 9px 0 var(--border);
-        }
-
+        .opt-btn:hover { background: var(--primary); color: white; transform: translate(-3px, -3px); box-shadow: 9px 9px 0 var(--border); }
         .opt-btn:active { transform: translate(3px, 3px); box-shadow: 2px 2px 0 var(--border); }
 
-        /* --- 모달 (해설 창) --- */
-        .modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); display: none; justify-content: center;
-            align-items: center; z-index: 1000; padding: 20px;
-        }
-        .modal-content {
-            background: var(--card); border: 4px solid var(--border);
-            width: 100%; max-width: 600px; padding: 40px; text-align: center;
-            box-shadow: 15px 15px 0 var(--primary);
-        }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
+        .modal-content { background: var(--card); border: 4px solid var(--border); width: 100%; max-width: 600px; padding: 40px; text-align: center; box-shadow: 15px 15px 0 var(--primary); }
         .m-title { font-size: 3rem; font-weight: bold; margin-bottom: 20px; }
-        .m-exp { 
-            text-align: left; font-size: 1rem; margin-bottom: 30px; 
-            padding: 15px; background: var(--bg); border: 2px dashed var(--border);
-        }
-
-        .btn-next {
-            width: 100%; background: var(--primary); color: white;
-            border: 3px solid var(--border); padding: 15px; font-size: 1.2rem;
-            cursor: pointer; box-shadow: 4px 4px 0 var(--border);
-        }
+        .m-exp { text-align: left; font-size: 1rem; margin-bottom: 30px; padding: 15px; background: var(--bg); border: 2px dashed var(--border); }
 
         .hidden { display: none !important; }
-        [data-theme="dark"] pre { border-color: #555; }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <!-- [1] 시작 화면 -->
         <div id="screen-start" class="pixel-card">
-            <h1 id="quiz-title">QUEST LOADING...</h1>
-            <div style="text-align: center; margin-top: 40px;">
-                <p>당신의 코딩 지식을 테스트할 준비가 되었습니까?</p>
-                <button class="opt-btn" style="text-align:center; width: 100%; margin-top: 20px;" onclick="startQuiz()">
-                    MISSION START
-                </button>
-            </div>
+            <h1 id="quiz-title" style="color:var(--primary); text-align:center;">QUEST LOADING...</h1>
+            <button class="opt-btn" style="width:100%; text-align:center; margin-top:30px;" onclick="startQuiz()">MISSION START</button>
         </div>
 
-        <!-- [2] 퀴즈 플레이 화면 -->
         <div id="screen-quiz" class="pixel-card hidden">
             <div class="hp-bar"><div id="hp-fill" class="hp-fill"></div></div>
             <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: bold;">
                 <span id="stage-info" style="color: var(--primary);">STAGE 01</span>
                 <span id="count-info">1 / 5</span>
             </div>
-            
-            <!-- 마크다운 렌더링 영역 -->
             <div id="q-text" class="q-text"></div>
-            
-            <div id="opt-list" class="opt-list">
-                <!-- 보기가 여기에 마크다운으로 렌더링됨 -->
-            </div>
+            <div id="opt-list" class="opt-list"></div>
         </div>
 
-        <!-- [3] 결과 화면 -->
         <div id="screen-result" class="pixel-card hidden" style="text-align: center;">
             <h1>MISSION COMPLETE</h1>
-            <div id="final-score" style="font-size: 5rem; color: var(--primary); margin: 30px 0; text-shadow: 4px 4px 0 var(--border);">0 / 0</div>
-            <p id="result-msg" style="margin-bottom: 40px;"></p>
-            <button class="opt-btn" style="text-align:center; width: 100%;" onclick="location.reload()">REPLAY QUEST</button>
+            <div id="final-score" style="font-size: 5rem; color: var(--primary); margin: 30px 0;">0 / 0</div>
+            <button class="opt-btn" style="width: 100%; text-align:center;" onclick="location.reload()">REPLAY QUEST</button>
         </div>
     </div>
 
-    <!-- 피드백 모달 -->
     <div id="modal" class="modal">
         <div class="modal-content">
             <div id="m-title" class="m-title">CORRECT</div>
             <div id="m-exp" class="m-exp"></div>
-            <button class="btn-next" onclick="nextStage()">GO TO NEXT STAGE</button>
+            <button class="opt-btn" style="width:100%; text-align:center; background:var(--primary); color:white;" onclick="nextStage()">NEXT STAGE</button>
         </div>
     </div>
 
     <script>
-        // --- 마크다운 옵션 설정 (가독성 핵심) ---
-        marked.setOptions({
-            breaks: true,   // 엔터 한 번을 <br>로 인식
-            gfm: true,      // GitHub Flavored Markdown 지원
-            headerIds: false,
-            mangle: false
-        });
+        // --- 핵심: 안전한 마크다운 변환 함수 ---
+        function getSafeMarkdown(rawText) {
+            if (!rawText) return "";
+            // 1. 모든 < 와 > 를 엔티티로 변환하여 브라우저가 실행하지 못하게 함
+            let safeText = rawText.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            
+            // 2. marked.js를 통해 마크다운 변환
+            return marked.parse(safeText);
+        }
+
+        marked.setOptions({ breaks: true, gfm: true });
 
         const SB_URL = "https://eixxtdnkqopqiawqvibl.supabase.co";
         const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpeHh0ZG5rcW9wcWlhd3F2aWJsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY3OTQ5MjYsImV4cCI6MjEwMjM3MDkyNn0.R7--WSmlJnYuz2bymCUhzzpTKVY-OHNIhyAR7e-qMYE";
@@ -219,11 +142,8 @@
         window.onload = async () => {
             db = window.supabase.createClient(SB_URL, SB_KEY);
             const id = new URLSearchParams(window.location.search).get('id');
-            if(!id) return document.getElementById('quiz-title').innerText = "ID ERROR";
-
-            const { data, error } = await db.from('quizzes').select('*').eq('id', id).single();
-            if(error) return document.getElementById('quiz-title').innerText = "LOAD ERROR";
-
+            if(!id) return;
+            const { data } = await db.from('quizzes').select('*').eq('id', id).single();
             questions = data.quiz_data;
             document.getElementById('quiz-title').innerText = data.title;
         };
@@ -240,21 +160,19 @@
             document.getElementById('stage-info').innerText = "STAGE " + String(curIdx + 1).padStart(2, '0');
             document.getElementById('count-info').innerText = (curIdx + 1) + " / " + questions.length;
 
-            // 질문 마크다운 렌더링
-            document.getElementById('q-text').innerHTML = marked.parse(q.q);
+            // 안전한 렌더링 적용
+            document.getElementById('q-text').innerHTML = getSafeMarkdown(q.q);
 
             const optList = document.getElementById('opt-list');
             optList.innerHTML = "";
             q.a.forEach((opt, i) => {
                 const btn = document.createElement('button');
                 btn.className = 'opt-btn';
-                // 보기에도 마크다운 적용 (인라인 코드 등 대응)
-                btn.innerHTML = marked.parse(opt.text);
+                btn.innerHTML = getSafeMarkdown(opt.text);
                 btn.onclick = () => checkAnswer(i);
                 optList.appendChild(btn);
             });
 
-            // 코드 하이라이팅 강제 재적용
             Prism.highlightAll();
         }
 
@@ -264,17 +182,14 @@
             if(isCorrect) score++;
 
             const modal = document.getElementById('modal');
-            const mTitle = document.getElementById('m-title');
-            const mExp = document.getElementById('m-exp');
-
-            mTitle.innerText = isCorrect ? "CORRECT" : "WRONG";
-            mTitle.style.color = isCorrect ? "#2ecc71" : "#e74c3c";
+            document.getElementById('m-title').innerText = isCorrect ? "CORRECT" : "WRONG";
+            document.getElementById('m-title').style.color = isCorrect ? "#2ecc71" : "#e74c3c";
             
-            // 해설 마크다운 렌더링
-            mExp.innerHTML = marked.parse(q.a[idx].exp || (isCorrect ? "정답입니다!" : "틀렸습니다!"));
+            // 해설에도 안전한 렌더링 적용
+            document.getElementById('m-exp').innerHTML = getSafeMarkdown(q.a[idx].exp);
             
             modal.style.display = "flex";
-            Prism.highlightAll(); // 모달 내 코드도 하이라이팅
+            Prism.highlightAll();
         }
 
         function nextStage() {
@@ -288,9 +203,6 @@
             document.getElementById('screen-quiz').classList.add('hidden');
             document.getElementById('screen-result').classList.remove('hidden');
             document.getElementById('final-score').innerText = score + " / " + questions.length;
-            
-            const ratio = score / questions.length;
-            document.getElementById('result-msg').innerText = ratio === 1 ? "당신은 완벽한 픽셀 마스터입니다!" : "아쉽네요, 다시 도전해보세요!";
         }
     </script>
 </body>
